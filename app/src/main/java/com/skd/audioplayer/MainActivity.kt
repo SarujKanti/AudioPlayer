@@ -98,6 +98,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_EXTERNAL_STORAGE
