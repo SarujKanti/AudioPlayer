@@ -230,7 +230,7 @@
             <Button
                 android:id="@+id/nextButton"
                 android:layout_marginLeft="20sp"
-                android:layout_width="60dp"
+                android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:background="@drawable/next"
                 />

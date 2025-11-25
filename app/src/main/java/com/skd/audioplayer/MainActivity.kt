@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity() {
     private var isRepeatOneOn = false
     private var isRepeatAllOn = false
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -68,16 +67,12 @@ class MainActivity : AppCompatActivity() {
         )
         wakeLock.acquire()
 
-
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         songsAdapter = SongsAdapter(emptyList()) { song ->
             playSong(song)
         }
         recyclerView.adapter = songsAdapter
-
-        recyclerView.scrollToPosition(30) // Scroll to the beginning of the list
-
 
         seekBar = findViewById(R.id.seekBar)
         setupSeekBarListener()
@@ -97,7 +92,6 @@ class MainActivity : AppCompatActivity() {
                 false
             }
         }
-
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -121,20 +115,11 @@ class MainActivity : AppCompatActivity() {
             setupVisualizer()
         }
 
+        // FIXED: Corrected pause/resume button logic
         val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
         pauseResumeButton.setOnClickListener {
-            if (mediaPlayer.isPlaying) {
-                togglePlayback() // If playback is ongoing, toggle it
-            } else {
-                // If no song is currently playing, play the first song from the playlist
-                if (songsAdapter.itemCount > 0) {
-                    val firstSong = songsAdapter.getSongs()[50]
-                    currentSongIndex = 0
-                    playSong(firstSong)
-                }
-            }
+            togglePlaybackSafe()
         }
-
 
         val previousButton: Button = findViewById(R.id.previousButton)
         previousButton.setOnClickListener {
@@ -152,7 +137,6 @@ class MainActivity : AppCompatActivity() {
         visualizerView = findViewById(R.id.visualizerView)
         setupVisualizer()
 
-
         val shuffleButton: Button = findViewById(R.id.shuffleButton)
         val repeatButton: Button = findViewById(R.id.reapet_button)
 
@@ -164,7 +148,6 @@ class MainActivity : AppCompatActivity() {
         repeatButton.setOnClickListener {
             toggleRepeat()
         }
-
 
         val controlPanel: LinearLayout = findViewById(R.id.controlPanel)
         val playlist_button = findViewById<Button>(R.id.playlist_button)
@@ -181,8 +164,6 @@ class MainActivity : AppCompatActivity() {
                 heading.setText("Now Playing")
                 visualizerView.visibility = View.VISIBLE
                 controlPanel.visibility = View.VISIBLE
-
-
             } else {
                 Playing_Song_Cardview.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
@@ -190,18 +171,9 @@ class MainActivity : AppCompatActivity() {
                 heading.setText("All Songs")
                 visualizerView.visibility = View.GONE
                 controlPanel.visibility = View.VISIBLE
-
-
             }
             isPlaylistVisible = !isPlaylistVisible
         }
-
-
-
-
-
-
-
 
         val searchButton: Button = findViewById(R.id.search_button)
         val searchView: SearchView = findViewById(R.id.searchView)
@@ -216,8 +188,6 @@ class MainActivity : AppCompatActivity() {
                 // Hide the soft keyboard
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
-
-
             } else {
                 searchView.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
@@ -230,11 +200,8 @@ class MainActivity : AppCompatActivity() {
                 // Show the soft keyboard
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
-
             }
         }
-
-
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
@@ -254,19 +221,32 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-// Listen for text changes directly on the SearchView widget
+        // Listen for text changes directly on the SearchView widget
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
                 // Clear the search query and show all songs when the SearchView loses focus
                 searchView.setQuery("", false)
-
                 loadSongs()
             }
         }
+    }
 
+    // FIXED: Added safe toggle playback method
+    private fun togglePlaybackSafe() {
+        // Check if we have a valid current song
+        if (currentSongIndex == -1) {
+            // No current song, play the first one if available
+            if (songsAdapter.itemCount > 0) {
+                currentSongIndex = 0
+                playSong(songsAdapter.getSongs()[0])
+            } else {
+                Toast.makeText(this, "No songs available", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
 
-
-
+        // We have a current song, toggle playback
+        togglePlayback()
     }
 
     private fun setupVisualizer() {
@@ -320,9 +300,10 @@ class MainActivity : AppCompatActivity() {
             playSong(song)
         }
         recyclerView.adapter = songsAdapter
-        recyclerView.scrollToPosition(0) // Scroll to the beginning of the list
+        if (songsList.isNotEmpty()) {
+            recyclerView.scrollToPosition(0) // Scroll to the beginning of the list
+        }
     }
-
 
     private fun toggleShuffle() {
         isShuffleOn = !isShuffleOn
@@ -331,17 +312,15 @@ class MainActivity : AppCompatActivity() {
         val shuffleButton: Button = findViewById(R.id.shuffleButton)
         shuffleButton.setBackgroundResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle_off)
 
-
         // Update the button appearance based on the shuffle state
         if (isShuffleOn) {
             // Shuffle is on
             songsAdapter.shuffleSongs()
         } else {
-
+            // Shuffle is off - reload original order
+            loadSongs()
         }
-
     }
-
 
     private fun toggleRepeat() {
         val repeat_button: Button = findViewById(R.id.reapet_button)
@@ -351,63 +330,71 @@ class MainActivity : AppCompatActivity() {
             isRepeatAllOn = false
             isRepeatOneOn = false
             repeat_button.setBackgroundResource(R.drawable.repeat)
-            // Optionally, update UI to reflect the change
         } else if (isRepeatOneOn) {
             // If repeat one is on, turn on repeat all
             isRepeatAllOn = true
             isRepeatOneOn = false
             repeat_button.setBackgroundResource(R.drawable.repeat_on)
-
-            // Optionally, update UI to reflect the change
         } else {
             // If repeat is off, turn on repeat one
             isRepeatOneOn = true
             repeat_button.setBackgroundResource(R.drawable.repeat_one)
-
-            // Optionally, update UI to reflect the change
         }
 
         // Update playback logic based on the new state of repeat modes
         if (isRepeatAllOn) {
             isShuffleOn = false // Turn off shuffle if repeat all is on
         }
-        // If repeat one is on, no need to update playback logic here as it will be handled in playNextSong() function
-        // If no repeat mode is on, no need to update playback logic here as it will be handled in playNextSong() function
     }
 
-    // You may need to update the playNextSong() function to handle shuffle and repeat modes
     private fun playNextSong() {
+        if (songsAdapter.itemCount == 0) return
+
         // Implement logic to play the next song based on shuffle and repeat modes
-        // For example:
         if (isShuffleOn) {
             // Play a random song from the shuffled list
             val randomIndex = (0 until songsAdapter.itemCount).random()
             val nextSong = songsAdapter.getSongs()[randomIndex]
             currentSongIndex = randomIndex
             playSong(nextSong)
-
         } else if (isRepeatOneOn) {
             // Repeat the current song
             val currentSong = songsAdapter.getSongs()[currentSongIndex]
             playSong(currentSong)
-
         } else if (currentSongIndex < songsAdapter.itemCount - 1) {
             // Play the next song in the normal order
             val nextSong = songsAdapter.getSongs()[currentSongIndex + 1]
             currentSongIndex++
             playSong(nextSong)
-
         } else if (isRepeatAllOn) {
             // If repeat all is on and reached the end of the list, go back to the first song
             currentSongIndex = 0
             val nextSong = songsAdapter.getSongs()[currentSongIndex]
             playSong(nextSong)
+        } else {
+            // No more songs and repeat is off, stop playback
+            currentSongIndex = -1
+            mediaPlayer.stop()
+            val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
+            pauseResumeButton.setBackgroundResource(R.drawable.play)
         }
     }
 
+    private fun playPreviousSong() {
+        if (songsAdapter.itemCount == 0) return
 
-
-
+        val previousIndex = currentSongIndex - 1
+        if (previousIndex >= 0) {
+            val previousSong = songsAdapter.getSongs()[previousIndex]
+            currentSongIndex = previousIndex
+            playSong(previousSong)
+        } else if (isRepeatAllOn) {
+            // If repeat all is on and at the first song, go to the last song
+            currentSongIndex = songsAdapter.itemCount - 1
+            val previousSong = songsAdapter.getSongs()[currentSongIndex]
+            playSong(previousSong)
+        }
+    }
 
     private fun playSong(song: Song) {
         val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
@@ -416,8 +403,6 @@ class MainActivity : AppCompatActivity() {
         val cardview: CardView = findViewById(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
         val playlist_button = findViewById<Button>(R.id.playlist_button)
-
-
 
         try {
             // Reset isPlaying property for all songs
@@ -462,7 +447,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             showNotification(song)
-            recyclerView.smoothScrollToPosition(index) // Scroll to the beginning of the list
+            if (index != -1) {
+                recyclerView.smoothScrollToPosition(index)
+            }
             visualizerView.visibility = View.VISIBLE
             cardview.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -472,8 +459,6 @@ class MainActivity : AppCompatActivity() {
             val controlPanel: LinearLayout = findViewById(R.id.controlPanel)
             searchView.visibility = View.GONE
             controlPanel.visibility = View.VISIBLE
-
-
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -492,37 +477,27 @@ class MainActivity : AppCompatActivity() {
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-
-
-
+    // FIXED: Improved togglePlayback function
     private fun togglePlayback() {
         val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
 
-        if (mediaPlayer != null && mediaPlayer.isPlaying) {
+        if (mediaPlayer.isPlaying) {
             mediaPlayer.pause()
-            notificationManager.cancel(NOTIFICATION_ID)
             pauseResumeButton.setBackgroundResource(R.drawable.play)
-            updateSeekBar()
+            notificationManager.cancel(NOTIFICATION_ID)
             visualizerView.visibility = View.GONE
         } else {
-            mediaPlayer?.start()
-            val song = songsAdapter.getSongs()[currentSongIndex]
-            showNotification(song)
+            mediaPlayer.start()
             pauseResumeButton.setBackgroundResource(R.drawable.pause)
-            updateSeekBar()
+
+            // Update notification with current song
+            if (currentSongIndex != -1) {
+                val currentSong = songsAdapter.getSongs()[currentSongIndex]
+                showNotification(currentSong)
+            }
+
             visualizerView.visibility = View.VISIBLE
-
-        }
-    }
-
-
-
-    private fun playPreviousSong() {
-        val previousIndex = currentSongIndex - 1
-        if (previousIndex >= 0) {
-            val previousSong = songsAdapter.getSongs()[previousIndex]
-            currentSongIndex = previousIndex
-            playSong(previousSong)
+            updateSeekBar()
         }
     }
 
@@ -543,6 +518,7 @@ class MainActivity : AppCompatActivity() {
             handler.postDelayed({ updateSeekBar() }, 1000)
         }
     }
+
     private fun setupSeekBarListener() {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -572,10 +548,6 @@ class MainActivity : AppCompatActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
-
-
-
-
 
     private fun showNotification(song: Song) {
         val notificationLayout = RemoteViews(packageName, R.layout.custom_notification_layout)
@@ -631,7 +603,6 @@ class MainActivity : AppCompatActivity() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-
     override fun onDestroy() {
         super.onDestroy()
         mediaPlayer.release()
@@ -642,7 +613,6 @@ class MainActivity : AppCompatActivity() {
             wakeLock.release()
         }
     }
-
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
