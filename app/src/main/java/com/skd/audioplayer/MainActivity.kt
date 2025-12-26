@@ -626,7 +626,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(
                     this,
-                    "Permission Denied!! Please grant permission to access storage.",
+                    getString(R.string.permission_denied),
                     Toast.LENGTH_SHORT
                 ).show()
             }
