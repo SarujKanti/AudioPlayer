@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
-import android.media.audiofx.Visualizer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -59,7 +58,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Acquire a wakelock
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.SCREEN_DIM_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
@@ -69,9 +67,7 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        songsAdapter = SongsAdapter(emptyList()) { song ->
-            playSong(song)
-        }
+        songsAdapter = SongsAdapter(emptyList()) { song -> playSong(song) }
         recyclerView.adapter = songsAdapter
 
         seekBar = findViewById(R.id.seekBar)
@@ -83,71 +79,38 @@ class MainActivity : AppCompatActivity() {
                 seekBar.max = it.duration
                 updateSeekBar()
             }
-            setOnErrorListener { mp, what, extra ->
-                Toast.makeText(
-                    this@MainActivity,
-                    "Error occurred while playing the song.",
-                    Toast.LENGTH_SHORT
-                ).show()
+            setOnErrorListener { _, _, _ ->
+                Toast.makeText(this@MainActivity, "Error playing song.", Toast.LENGTH_SHORT).show()
                 false
             }
-        }
-
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.RECORD_AUDIO
-                ),
-                PERMISSION_REQUEST_CODE
-            )
-        } else {
-            loadSongs()
-            setupVisualizer()
-        }
-
-        // FIXED: Corrected pause/resume button logic
-        val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
-        pauseResumeButton.setOnClickListener {
-            togglePlaybackSafe()
-        }
-
-        val previousButton: Button = findViewById(R.id.previousButton)
-        previousButton.setOnClickListener {
-            playPreviousSong()
-        }
-
-        val nextButton: Button = findViewById(R.id.nextButton)
-        nextButton.setOnClickListener {
-            playNextSong()
         }
 
         notificationManager = NotificationManagerCompat.from(this)
         createNotificationChannel()
 
         visualizerView = findViewById(R.id.visualizerView)
-        setupVisualizer()
+
+        if (hasRequiredPermissions()) {
+            loadSongs()
+            setupVisualizer()
+        } else {
+            requestRequiredPermissions()
+        }
+
+        val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
+        pauseResumeButton.setOnClickListener { togglePlaybackSafe() }
+
+        val previousButton: Button = findViewById(R.id.previousButton)
+        previousButton.setOnClickListener { playPreviousSong() }
+
+        val nextButton: Button = findViewById(R.id.nextButton)
+        nextButton.setOnClickListener { playNextSong() }
 
         val shuffleButton: Button = findViewById(R.id.shuffleButton)
+        shuffleButton.setOnClickListener { toggleShuffle() }
+
         val repeatButton: Button = findViewById(R.id.reapet_button)
-
-        // Set click listeners for shuffle and repeat buttons
-        shuffleButton.setOnClickListener {
-            toggleShuffle()
-        }
-
-        repeatButton.setOnClickListener {
-            toggleRepeat()
-        }
+        repeatButton.setOnClickListener { toggleRepeat() }
 
         val controlPanel: LinearLayout = findViewById(R.id.controlPanel)
         val playlist_button = findViewById<Button>(R.id.playlist_button)
@@ -161,14 +124,14 @@ class MainActivity : AppCompatActivity() {
                 Playing_Song_Cardview.visibility = View.VISIBLE
                 recyclerView.visibility = View.GONE
                 playlist_button.setBackgroundResource(R.drawable.playlist)
-                heading.setText("Now Playing")
+                heading.text = "Now Playing"
                 visualizerView.visibility = View.VISIBLE
                 controlPanel.visibility = View.VISIBLE
             } else {
                 Playing_Song_Cardview.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
                 playlist_button.setBackgroundResource(R.drawable.playing_button)
-                heading.setText("All Songs")
+                heading.text = "All Songs"
                 visualizerView.visibility = View.GONE
                 controlPanel.visibility = View.VISIBLE
             }
@@ -177,7 +140,7 @@ class MainActivity : AppCompatActivity() {
 
         val searchButton: Button = findViewById(R.id.search_button)
         val searchView: SearchView = findViewById(R.id.searchView)
-        val Playing_Song_Cardview2: CardView = findViewById(R.id.Playing_Song_Cardview)
+        val playingCardView: CardView = findViewById(R.id.Playing_Song_Cardview)
 
         searchView.visibility = View.GONE
 
@@ -185,57 +148,67 @@ class MainActivity : AppCompatActivity() {
             if (searchView.visibility == View.VISIBLE) {
                 searchView.visibility = View.GONE
                 controlPanel.visibility = View.VISIBLE
-                // Hide the soft keyboard
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
             } else {
                 searchView.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
-                Playing_Song_Cardview2.visibility = View.GONE
+                playingCardView.visibility = View.GONE
                 controlPanel.visibility = View.GONE
-
-                // Focus on the SearchView
                 searchView.requestFocus()
-
-                // Show the soft keyboard
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
             }
         }
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String): Boolean {
-                // Handle search query submission if needed
-                return false
-            }
+            override fun onQueryTextSubmit(query: String) = false
 
             override fun onQueryTextChange(newText: String): Boolean {
-                // Filter the song list based on the user's input
-                val filteredList = songsAdapter.getSongs().filter { song ->
-                    song.title.contains(newText, ignoreCase = true) || song.artist.contains(newText, ignoreCase = true)
+                val filtered = songsAdapter.getSongs().filter { song ->
+                    song.title.contains(newText, ignoreCase = true) ||
+                            song.artist.contains(newText, ignoreCase = true)
                 }
-
-                // Update the RecyclerView with the filtered list
-                songsAdapter.submitList(filteredList)
+                songsAdapter.submitList(filtered)
                 return true
             }
         })
 
-        // Listen for text changes directly on the SearchView widget
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
-                // Clear the search query and show all songs when the SearchView loses focus
                 searchView.setQuery("", false)
                 loadSongs()
             }
         }
     }
 
-    // FIXED: Added safe toggle playback method
+    // Returns true if both storage and audio permissions are granted
+    private fun hasRequiredPermissions(): Boolean {
+        val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        return ContextCompat.checkSelfPermission(this, storagePermission) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestRequiredPermissions() {
+        val permissions = mutableListOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                Manifest.permission.READ_MEDIA_AUDIO
+            else
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.RECORD_AUDIO
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        ActivityCompat.requestPermissions(this, permissions.toTypedArray(), PERMISSION_REQUEST_CODE)
+    }
+
     private fun togglePlaybackSafe() {
-        // Check if we have a valid current song
         if (currentSongIndex == -1) {
-            // No current song, play the first one if available
             if (songsAdapter.itemCount > 0) {
                 currentSongIndex = 0
                 playSong(songsAdapter.getSongs()[0])
@@ -244,13 +217,13 @@ class MainActivity : AppCompatActivity() {
             }
             return
         }
-
-        // We have a current song, toggle playback
         togglePlayback()
     }
 
     private fun setupVisualizer() {
-        if (::visualizerView.isInitialized) {
+        if (::visualizerView.isInitialized &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        ) {
             visualizerView.setPlayer(mediaPlayer.audioSessionId)
         }
     }
@@ -258,8 +231,9 @@ class MainActivity : AppCompatActivity() {
     private fun loadSongs() {
         val songsList = mutableListOf<Song>()
 
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0" // Filter only music files
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.DATA,
@@ -275,22 +249,24 @@ class MainActivity : AppCompatActivity() {
         )
 
         musicCursor?.use { cursor ->
+            val idColumn = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
             val titleColumn = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE)
             val artistColumn = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)
             val pathColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
             val albumIdColumn = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)
 
             while (cursor.moveToNext()) {
-                val title = cursor.getString(titleColumn)
-                val artist = cursor.getString(artistColumn)
-                val path = cursor.getString(pathColumn)
+                val id = cursor.getLong(idColumn)
+                val title = cursor.getString(titleColumn) ?: "Unknown"
+                val artist = cursor.getString(artistColumn) ?: "Unknown"
+                val path = cursor.getString(pathColumn) ?: ""
                 val albumId = cursor.getLong(albumIdColumn)
                 val albumArtUri = ContentUris.withAppendedId(
                     Uri.parse("content://media/external/audio/albumart"),
                     albumId
                 ).toString()
 
-                songsList.add(Song(title, artist, path, albumArtUri))
+                songsList.add(Song(id, title, artist, path, albumArtUri))
             }
         }
 
@@ -301,78 +277,53 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = songsAdapter
         if (songsList.isNotEmpty()) {
-            recyclerView.scrollToPosition(0) // Scroll to the beginning of the list
+            recyclerView.scrollToPosition(0)
         }
     }
 
     private fun toggleShuffle() {
         isShuffleOn = !isShuffleOn
-
-        // Find the shuffle button by its ID
         val shuffleButton: Button = findViewById(R.id.shuffleButton)
         shuffleButton.setBackgroundResource(if (isShuffleOn) R.drawable.shuffle_on else R.drawable.shuffle_off)
-
-        // Update the button appearance based on the shuffle state
         if (isShuffleOn) {
-            // Shuffle is on
             songsAdapter.shuffleSongs()
         } else {
-            // Shuffle is off - reload original order
             loadSongs()
         }
     }
 
     private fun toggleRepeat() {
-        val repeat_button: Button = findViewById(R.id.reapet_button)
-
+        val repeatButton: Button = findViewById(R.id.reapet_button)
         if (isRepeatAllOn) {
-            // If repeat all is on, turn off repeat completely
             isRepeatAllOn = false
             isRepeatOneOn = false
-            repeat_button.setBackgroundResource(R.drawable.repeat)
+            repeatButton.setBackgroundResource(R.drawable.repeat)
         } else if (isRepeatOneOn) {
-            // If repeat one is on, turn on repeat all
             isRepeatAllOn = true
             isRepeatOneOn = false
-            repeat_button.setBackgroundResource(R.drawable.repeat_on)
+            repeatButton.setBackgroundResource(R.drawable.repeat_on)
         } else {
-            // If repeat is off, turn on repeat one
             isRepeatOneOn = true
-            repeat_button.setBackgroundResource(R.drawable.repeat_one)
+            repeatButton.setBackgroundResource(R.drawable.repeat_one)
         }
-
-        // Update playback logic based on the new state of repeat modes
-        if (isRepeatAllOn) {
-            isShuffleOn = false // Turn off shuffle if repeat all is on
-        }
+        if (isRepeatAllOn) isShuffleOn = false
     }
 
     private fun playNextSong() {
         if (songsAdapter.itemCount == 0) return
-
-        // Implement logic to play the next song based on shuffle and repeat modes
         if (isShuffleOn) {
-            // Play a random song from the shuffled list
             val randomIndex = (0 until songsAdapter.itemCount).random()
-            val nextSong = songsAdapter.getSongs()[randomIndex]
             currentSongIndex = randomIndex
-            playSong(nextSong)
+            playSong(songsAdapter.getSongs()[randomIndex])
         } else if (isRepeatOneOn) {
-            // Repeat the current song
-            val currentSong = songsAdapter.getSongs()[currentSongIndex]
-            playSong(currentSong)
+            playSong(songsAdapter.getSongs()[currentSongIndex])
         } else if (currentSongIndex < songsAdapter.itemCount - 1) {
-            // Play the next song in the normal order
-            val nextSong = songsAdapter.getSongs()[currentSongIndex + 1]
             currentSongIndex++
-            playSong(nextSong)
+            playSong(songsAdapter.getSongs()[currentSongIndex])
         } else if (isRepeatAllOn) {
-            // If repeat all is on and reached the end of the list, go back to the first song
             currentSongIndex = 0
-            val nextSong = songsAdapter.getSongs()[currentSongIndex]
-            playSong(nextSong)
+            playSong(songsAdapter.getSongs()[currentSongIndex])
         } else {
-            // No more songs and repeat is off, stop playback
             currentSongIndex = -1
             mediaPlayer.stop()
             val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
@@ -382,17 +333,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun playPreviousSong() {
         if (songsAdapter.itemCount == 0) return
-
         val previousIndex = currentSongIndex - 1
         if (previousIndex >= 0) {
-            val previousSong = songsAdapter.getSongs()[previousIndex]
             currentSongIndex = previousIndex
-            playSong(previousSong)
+            playSong(songsAdapter.getSongs()[currentSongIndex])
         } else if (isRepeatAllOn) {
-            // If repeat all is on and at the first song, go to the last song
             currentSongIndex = songsAdapter.itemCount - 1
-            val previousSong = songsAdapter.getSongs()[currentSongIndex]
-            playSong(previousSong)
+            playSong(songsAdapter.getSongs()[currentSongIndex])
         }
     }
 
@@ -405,10 +352,7 @@ class MainActivity : AppCompatActivity() {
         val playlist_button = findViewById<Button>(R.id.playlist_button)
 
         try {
-            // Reset isPlaying property for all songs
             songsAdapter.getSongs().forEach { it.isPlaying = false }
-
-            // Set isPlaying property for the currently playing song
             val index = songsAdapter.getSongs().indexOf(song)
             if (index != -1) {
                 songsAdapter.getSongs()[index].isPlaying = true
@@ -416,44 +360,42 @@ class MainActivity : AppCompatActivity() {
             }
 
             mediaPlayer.reset()
-            mediaPlayer.setDataSource(song.path)
+
+            // Use content URI for reliable playback on all Android versions including 13+
+            val songUri = ContentUris.withAppendedId(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                song.id
+            )
+            mediaPlayer.setDataSource(applicationContext, songUri)
             mediaPlayer.prepareAsync()
 
             mediaPlayer.setOnPreparedListener {
                 it.start()
                 seekBar.max = it.duration
                 updateSeekBar()
+                setupVisualizer()
                 findViewById<TextView>(R.id.song_title).apply {
                     text = song.title
-                    setOnClickListener {
-                        recyclerView.smoothScrollToPosition(index)
-                    }
+                    setOnClickListener { recyclerView.smoothScrollToPosition(index) }
                 }
                 pauseResumeButton.setBackgroundResource(R.drawable.pause)
 
-                // Set the image view to the album art of the currently playing song
                 val albumArtUri = Uri.parse(song.albumArtUri)
-                if (albumArtUri != null) {
-                    playingSongImageView.setImageURI(albumArtUri)
-                } else {
-                    playingSongImageView.setImageResource(R.drawable.play)
+                playingSongImageView.setImageURI(albumArtUri)
+                if (playingSongImageView.drawable == null) {
+                    playingSongImageView.setImageResource(R.drawable.audioicon)
                 }
-
                 songArtistTextView.text = song.artist
             }
 
-            mediaPlayer.setOnCompletionListener {
-                playNextSong()
-            }
+            mediaPlayer.setOnCompletionListener { playNextSong() }
 
             showNotification(song)
-            if (index != -1) {
-                recyclerView.smoothScrollToPosition(index)
-            }
+            if (index != -1) recyclerView.smoothScrollToPosition(index)
             visualizerView.visibility = View.VISIBLE
             cardview.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
-            heading.setText("Now Playing")
+            heading.text = "Now Playing"
             playlist_button.setBackgroundResource(R.drawable.playlist)
             val searchView: SearchView = findViewById(R.id.searchView)
             val controlPanel: LinearLayout = findViewById(R.id.controlPanel)
@@ -462,25 +404,17 @@ class MainActivity : AppCompatActivity() {
 
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(
-                this@MainActivity,
-                "Error occurred while playing the song.",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(this, "Error playing song.", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun formatTime(milliseconds: Int): String {
         val seconds = milliseconds / 1000
-        val minutes = seconds / 60
-        val remainingSeconds = seconds % 60
-        return String.format("%02d:%02d", minutes, remainingSeconds)
+        return String.format("%02d:%02d", seconds / 60, seconds % 60)
     }
 
-    // FIXED: Improved togglePlayback function
     private fun togglePlayback() {
         val pauseResumeButton: Button = findViewById(R.id.pauseResumeButton)
-
         if (mediaPlayer.isPlaying) {
             mediaPlayer.pause()
             pauseResumeButton.setBackgroundResource(R.drawable.play)
@@ -489,13 +423,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             mediaPlayer.start()
             pauseResumeButton.setBackgroundResource(R.drawable.pause)
-
-            // Update notification with current song
             if (currentSongIndex != -1) {
-                val currentSong = songsAdapter.getSongs()[currentSongIndex]
-                showNotification(currentSong)
+                showNotification(songsAdapter.getSongs()[currentSongIndex])
             }
-
             visualizerView.visibility = View.VISIBLE
             updateSeekBar()
         }
@@ -505,16 +435,9 @@ class MainActivity : AppCompatActivity() {
         if (mediaPlayer.isPlaying) {
             val currentPosition = mediaPlayer.currentPosition
             seekBar.progress = currentPosition
-
-            // Update positive playback timer
-            val positivePlaybackTime = formatTime(currentPosition)
-            findViewById<TextView>(R.id.positive_playback_timer).text = positivePlaybackTime
-
-            // Update negative playback timer
-            val remainingTime = mediaPlayer.duration - currentPosition
-            val negativePlaybackTime = formatTime(remainingTime)
-            findViewById<TextView>(R.id.negative_playback_timer).text = "-$negativePlaybackTime"
-
+            findViewById<TextView>(R.id.positive_playback_timer).text = formatTime(currentPosition)
+            val remaining = mediaPlayer.duration - currentPosition
+            findViewById<TextView>(R.id.negative_playback_timer).text = "-${formatTime(remaining)}"
             handler.postDelayed({ updateSeekBar() }, 1000)
         }
     }
@@ -522,18 +445,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupSeekBarListener() {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    mediaPlayer.seekTo(progress)
-                }
+                if (fromUser) mediaPlayer.seekTo(progress)
             }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                isUserSeeking = true
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                isUserSeeking = false
-            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) { isUserSeeking = true }
+            override fun onStopTrackingTouch(seekBar: SeekBar?) { isUserSeeking = false }
         })
     }
 
@@ -544,20 +459,20 @@ class MainActivity : AppCompatActivity() {
                 "Music Player Notification Channel",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
     private fun showNotification(song: Song) {
-        val notificationLayout = RemoteViews(packageName, R.layout.custom_notification_layout)
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) return
 
+        val notificationLayout = RemoteViews(packageName, R.layout.custom_notification_layout)
         notificationLayout.setTextViewText(R.id.notification_title, song.title)
         notificationLayout.setTextViewText(R.id.notification_artist, song.artist)
 
-        // Load album art into the notification layout
         val albumArtUri = Uri.parse(song.albumArtUri)
-        val contentResolver = applicationContext.contentResolver
         try {
             val inputStream = contentResolver.openInputStream(albumArtUri)
             if (inputStream != null) {
@@ -565,41 +480,22 @@ class MainActivity : AppCompatActivity() {
                 notificationLayout.setImageViewBitmap(R.id.notification_album_art, bitmap)
                 inputStream.close()
             } else {
-                // Use a placeholder image or handle the case where album art is not available
-                notificationLayout.setImageViewResource(R.id.notification_album_art,
-                    R.drawable.audioicon
-                )
+                notificationLayout.setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
             }
         } catch (e: FileNotFoundException) {
-            e.printStackTrace()
-            // Use a placeholder image or handle the case where album art is not available
-            notificationLayout.setImageViewResource(R.id.notification_album_art,
-                R.drawable.audioicon
-            )
+            notificationLayout.setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
         } catch (e: IOException) {
-            e.printStackTrace()
-            // Use a placeholder image or handle the case where album art is not available
-            notificationLayout.setImageViewResource(R.id.notification_album_art,
-                R.drawable.audioicon
-            )
+            notificationLayout.setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
         }
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.audioicon)
             .setCustomContentView(notificationLayout)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setSound(null) // Set the notification sound to null
-            .setOnlyAlertOnce(true) // Prevents the notification sound from playing every time
+            .setSound(null)
+            .setOnlyAlertOnce(true)
             .build()
 
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Handle the case where the app doesn't have permission to post notifications
-            return
-        }
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
@@ -607,11 +503,8 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         mediaPlayer.release()
         notificationManager.cancel(NOTIFICATION_ID)
-        val visualizerView: CustomVisualizerView = findViewById(R.id.visualizerView)
         visualizerView.releaseVisualizer()
-        if (wakeLock.isHeld) {
-            wakeLock.release()
-        }
+        if (wakeLock.isHeld) wakeLock.release()
     }
 
     override fun onRequestPermissionsResult(
@@ -621,14 +514,20 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                Manifest.permission.READ_MEDIA_AUDIO
+            else
+                Manifest.permission.READ_EXTERNAL_STORAGE
+
+            val storageIndex = permissions.indexOf(storagePermission)
+            val storageGranted = storageIndex != -1 &&
+                    grantResults[storageIndex] == PackageManager.PERMISSION_GRANTED
+
+            if (storageGranted) {
                 loadSongs()
+                setupVisualizer()
             } else {
-                Toast.makeText(
-                    this,
-                    getString(R.string.permission_denied),
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -1,14 +1,10 @@
 package com.skd.audioplayer
 
 data class Song(
+    val id: Long,
     val title: String,
     val artist: String,
     val path: String,
     val albumArtUri: String,
-    var isPlaying: Boolean = false // New property to indicate if the song is currently playing
-
+    var isPlaying: Boolean = false
 )
-
-
-
-
