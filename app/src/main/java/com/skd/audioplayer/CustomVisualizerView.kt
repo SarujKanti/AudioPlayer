@@ -34,6 +34,8 @@ class CustomVisualizerView : View {
     }
 
     fun setPlayer(audioSessionId: Int) {
+        visualizer?.release()
+        visualizer = null
         visualizer = Visualizer(audioSessionId)
         visualizer?.apply {
             captureSize = Visualizer.getCaptureSizeRange()[1]
