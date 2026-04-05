@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:letterSpacing="0.06"
-            android:text="Your music, your world"
+            android:text="Feel Every Beat, Anywhere"
             android:textColor="#9B94FF"
             android:textSize="14sp" />
 
