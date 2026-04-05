@@ -32,6 +32,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -184,6 +185,14 @@ class MainActivity : AppCompatActivity() {
                 loadSongs()
             }
         }
+
+        // Back press → move app to background instead of destroying it,
+        // so the MediaPlayer and notification stay alive.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                moveTaskToBack(true)
+            }
+        })
     }
 
     private fun hasRequiredPermissions(): Boolean {
