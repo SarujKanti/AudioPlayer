@@ -128,6 +128,8 @@ class MainActivity : AppCompatActivity() {
                 heading.text = "Now Playing"
                 visualizerView.visibility = if (currentSongIndex != -1) View.VISIBLE else View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
+                visualizerView.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
             } else {
                 playingCardView.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
@@ -135,6 +137,7 @@ class MainActivity : AppCompatActivity() {
                 heading.text = "All Songs"
                 visualizerView.visibility = View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
             }
             isPlaylistVisible = !isPlaylistVisible
         }
@@ -147,13 +150,14 @@ class MainActivity : AppCompatActivity() {
             if (searchView.visibility == View.VISIBLE) {
                 searchView.visibility = View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
             } else {
                 searchView.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
                 playingCardView.visibility = View.GONE
-                controlPanel.visibility = View.GONE
+//                controlPanel.visibility = View.GONE
                 searchView.requestFocus()
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
