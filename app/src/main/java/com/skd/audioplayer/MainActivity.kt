@@ -114,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.shuffleButton).setOnClickListener { toggleShuffle() }
         findViewById<Button>(R.id.reapet_button).setOnClickListener { toggleRepeat() }
 
+        val controlPanel = findViewById<LinearLayout>(R.id.controlPanel)
         val playlistButton = findViewById<Button>(R.id.playlist_button)
         val playingCardView = findViewById<CardView>(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
@@ -125,15 +126,15 @@ class MainActivity : AppCompatActivity() {
                 recyclerView.visibility = View.GONE
                 playlistButton.setBackgroundResource(R.drawable.playlist)
                 heading.text = "Now Playing"
-                visualizerView.visibility = View.VISIBLE
-                controlPanel.visibility = View.VISIBLE
+                visualizerView.visibility = if (currentSongIndex != -1) View.VISIBLE else View.GONE
+                if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
             } else {
                 playingCardView.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
                 playlistButton.setBackgroundResource(R.drawable.playing_button)
                 heading.text = "All Songs"
                 visualizerView.visibility = View.GONE
-                controlPanel.visibility = View.VISIBLE
+                if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
             }
             isPlaylistVisible = !isPlaylistVisible
         }
@@ -145,7 +146,7 @@ class MainActivity : AppCompatActivity() {
         searchButton.setOnClickListener {
             if (searchView.visibility == View.VISIBLE) {
                 searchView.visibility = View.GONE
-                controlPanel.visibility = View.VISIBLE
+                if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
             } else {
