@@ -56,6 +56,8 @@ class MainActivity : AppCompatActivity() {
     private var isShuffleOn = false
     private var isRepeatOneOn = false
     private var isRepeatAllOn = false
+    // true = "All Songs" (recyclerView) is visible; false = "Now Playing" is visible
+    private var isPlaylistVisible = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,7 +123,6 @@ class MainActivity : AppCompatActivity() {
         val playlistButton = findViewById<Button>(R.id.playlist_button)
         val playingCardView = findViewById<CardView>(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
-        var isPlaylistVisible = true
 
         playlistButton.setOnClickListener {
             if (isPlaylistVisible) {
@@ -392,6 +393,7 @@ class MainActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
             heading.text = "Now Playing"
             playlistBtn.setBackgroundResource(R.drawable.playlist)
+            isPlaylistVisible = false   // keep flag in sync with actual UI state
             findViewById<SearchView>(R.id.searchView).visibility = View.GONE
             findViewById<LinearLayout>(R.id.controlPanel).visibility = View.VISIBLE
 
