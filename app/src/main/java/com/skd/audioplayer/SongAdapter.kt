@@ -33,13 +33,13 @@ class SongsAdapter(
         holder.bind(song)
         holder.itemView.setOnClickListener { onItemClick(song) }
 
-        if (song.isPlaying) {
-            holder.itemView.setBackgroundColor(
+        // Highlight currently playing song using theme-adaptive color
+        holder.itemView.setBackgroundColor(
+            if (song.isPlaying)
                 ContextCompat.getColor(holder.itemView.context, R.color.playing_bg)
-            )
-        } else {
-            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
-        }
+            else
+                Color.TRANSPARENT
+        )
     }
 
     override fun getItemCount(): Int = songs.size
@@ -57,8 +57,13 @@ class SongsAdapter(
         fun bind(song: Song) {
             titleTextView.text = song.title
             artistTextView.text = song.artist
-            titleTextView.setTextColor(Color.WHITE)
-            artistTextView.setTextColor(Color.parseColor("#9CA3AF"))
+            // Use theme-adaptive text colors from color resources
+            titleTextView.setTextColor(
+                ContextCompat.getColor(itemView.context, R.color.text_primary)
+            )
+            artistTextView.setTextColor(
+                ContextCompat.getColor(itemView.context, R.color.text_secondary)
+            )
             Glide.with(itemView.context)
                 .load(song.albumArtUri)
                 .placeholder(R.drawable.audioicon)

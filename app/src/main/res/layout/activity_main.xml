@@ -2,29 +2,34 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_dark"
     tools:context=".MainActivity">
 
-    <!-- Top bar -->
+    <!-- ══════════════════════════════════════
+         TOP BAR  (paddingTop set in code via WindowInsets)
+         ══════════════════════════════════════ -->
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="20dp"
+        android:paddingTop="0dp"
         android:paddingRight="12dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="12dp">
+        android:paddingBottom="8dp"
+        android:background="@color/bg_dark">
 
         <TextView
             android:id="@+id/heading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
+            android:fontFamily="sans-serif-medium"
             android:text="All Songs"
             android:textColor="@color/text_primary"
-            android:textSize="26sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <Button
@@ -37,30 +42,42 @@
 
         <Button
             android:id="@+id/playlist_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="10dp"
             android:layout_toStartOf="@id/search_button"
             android:background="@drawable/playlist" />
 
     </RelativeLayout>
 
-    <!-- Search bar -->
+    <!-- Thin divider under top bar -->
+    <View
+        android:id="@+id/topDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/topBar"
+        android:background="@color/divider" />
+
+    <!-- ══════════════════════════════════════
+         SEARCH VIEW
+         ══════════════════════════════════════ -->
     <SearchView
         android:id="@+id/searchView"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_below="@id/topBar"
+        android:layout_height="52dp"
+        android:layout_below="@id/topDivider"
         android:layout_marginLeft="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginRight="16dp"
-        android:layout_marginBottom="4dp"
         android:background="@color/bg_card"
         android:iconifiedByDefault="true"
-        android:queryHint="Search Songs"
+        android:queryHint="Search songs…"
         android:visibility="gone" />
 
-    <!-- Song list -->
+    <!-- ══════════════════════════════════════
+         SONG LIST  (playlist mode)
+         ══════════════════════════════════════ -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
@@ -68,20 +85,23 @@
         android:layout_above="@id/controlPanel"
         android:layout_below="@id/searchView"
         android:clipToPadding="false"
+        android:paddingTop="4dp"
         android:paddingBottom="8dp"
         android:scrollbars="none" />
 
-    <!-- Now playing album art -->
+    <!-- ══════════════════════════════════════
+         NOW PLAYING – album art card
+         ══════════════════════════════════════ -->
     <androidx.cardview.widget.CardView
         android:id="@+id/Playing_Song_Cardview"
-        android:layout_width="260dp"
-        android:layout_height="260dp"
-        android:layout_below="@id/topBar"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_below="@id/topDivider"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="24dp"
         android:visibility="gone"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="24dp">
+        app:cardCornerRadius="20dp"
+        app:cardElevation="20dp">
 
         <ImageView
             android:id="@+id/Playing_Song_Imageview"
@@ -92,7 +112,9 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- Audio visualizer -->
+    <!-- ══════════════════════════════════════
+         NOW PLAYING – visualizer
+         ══════════════════════════════════════ -->
     <com.skd.audioplayer.CustomVisualizerView
         android:id="@+id/visualizerView"
         android:layout_width="match_parent"
@@ -100,34 +122,44 @@
         android:layout_above="@id/controlPanel"
         android:layout_below="@id/Playing_Song_Cardview"
         android:layout_centerHorizontal="true"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginRight="8dp"
         android:layout_marginBottom="4dp"
         android:background="@color/bg_dark"
         android:visibility="gone" />
 
-    <!-- Control panel -->
+    <!-- ══════════════════════════════════════
+         CONTROL PANEL  (always at bottom;
+         paddingBottom set in code via WindowInsets)
+         ══════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/controlPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="@color/surface"
+        android:elevation="8dp"
         android:orientation="vertical"
         android:paddingLeft="20dp"
-        android:paddingTop="16dp"
+        android:paddingTop="14dp"
         android:paddingRight="20dp"
-        android:paddingBottom="28dp">
+        android:paddingBottom="20dp">
 
         <!-- Song title -->
         <TextView
             android:id="@+id/song_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
+            android:ellipsize="marquee"
+            android:fontFamily="sans-serif-medium"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
             android:singleLine="true"
             android:text="Song Title Here"
             android:textAlignment="center"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <!-- Artist name -->
@@ -135,47 +167,47 @@
             android:id="@+id/song_artist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="12dp"
             android:ellipsize="end"
             android:singleLine="true"
             android:text="Artist Name"
             android:textAlignment="center"
             android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
 
         <!-- Seek bar row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/positive_playback_timer"
-                android:layout_width="42dp"
+                android:layout_width="40dp"
                 android:layout_height="wrap_content"
                 android:text="00:00"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <SeekBar
                 android:id="@+id/seekBar"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:progressBackgroundTint="#3D3D5C"
+                android:progressBackgroundTint="@color/divider"
                 android:progressTint="@color/accent"
                 android:thumbTint="@color/accent" />
 
             <TextView
                 android:id="@+id/negative_playback_timer"
-                android:layout_width="42dp"
+                android:layout_width="40dp"
                 android:layout_height="wrap_content"
                 android:text="-00:00"
                 android:textAlignment="textEnd"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
         </LinearLayout>
 
@@ -183,46 +215,51 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_horizontal"
             android:orientation="horizontal">
 
+            <!-- Repeat -->
             <Button
                 android:id="@+id/reapet_button"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginEnd="20dp"
+                android:layout_marginEnd="18dp"
                 android:background="@drawable/repeat" />
 
+            <!-- Previous -->
             <Button
                 android:id="@+id/previousButton"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginEnd="16dp"
+                android:layout_marginEnd="14dp"
                 android:background="@drawable/previous" />
 
+            <!-- Play / Pause  (slightly larger) -->
             <Button
                 android:id="@+id/pauseResumeButton"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="62dp"
+                android:layout_height="62dp"
                 android:background="@drawable/play" />
 
+            <!-- Next -->
             <Button
                 android:id="@+id/nextButton"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="14dp"
                 android:background="@drawable/next" />
 
+            <!-- Shuffle -->
             <Button
                 android:id="@+id/shuffleButton"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="20dp"
+                android:layout_marginStart="18dp"
                 android:background="@drawable/shuffle_off" />
 
         </LinearLayout>
