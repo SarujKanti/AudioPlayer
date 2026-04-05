@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.media.audiofx.Visualizer
 import android.util.AttributeSet
+import android.view.View
 
 class CustomVisualizerView : View {
     private var bytes: ByteArray? = null
