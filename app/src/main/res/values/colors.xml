@@ -2,20 +2,23 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="green">#43A047</color>
+
+    <!-- Accent – shared between light and dark -->
+    <color name="accent">#6C63FF</color>
     <color name="shuffleOnColor">#6C63FF</color>
-    <color name="shuffleOffColor">#808080</color>
+    <color name="shuffleOffColor">#AAAAAA</color>
     <color name="blue">#6C63FF</color>
+    <color name="green">#43A047</color>
     <color name="red">#FF0000</color>
     <color name="textColor">#6C63FF</color>
     <color name="light">#9EA9C2</color>
 
-    <!-- Dark theme colors -->
-    <color name="bg_dark">#0D1117</color>
-    <color name="bg_card">#1C2333</color>
-    <color name="surface">#161B22</color>
-    <color name="accent">#6C63FF</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#9CA3AF</color>
-    <color name="playing_bg">#2D1B69</color>
+    <!-- Light mode adaptive colors -->
+    <color name="bg_dark">#F2F2F7</color>
+    <color name="bg_card">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#1C1C1E</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="playing_bg">#EDE9FE</color>
+    <color name="divider">#E5E5EA</color>
 </resources>

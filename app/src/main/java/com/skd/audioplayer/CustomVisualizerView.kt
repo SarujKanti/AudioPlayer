@@ -4,29 +4,34 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.media.audiofx.Visualizer
 import android.util.AttributeSet
-import android.view.View
 
 class CustomVisualizerView : View {
-    private var colorIndex = 0 // Index to track the current color
     private var bytes: ByteArray? = null
     private var visualizer: Visualizer? = null
-    private val paint: Paint = Paint()
-    private val colors = intArrayOf(Color.RED, Color.GREEN, Color.BLUE) // Define your colors here
-
-    constructor(context: Context) : super(context) {
-        init()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
     }
+    private val rect = RectF()
 
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        init()
-    }
+    // Purple-to-violet gradient palette matching the accent color
+    private val barColors = intArrayOf(
+        Color.parseColor("#4C46CC"),
+        Color.parseColor("#5A54D4"),
+        Color.parseColor("#6C63FF"),
+        Color.parseColor("#7B74FF"),
+        Color.parseColor("#8B83FF"),
+        Color.parseColor("#9C95FF"),
+        Color.parseColor("#8B83FF"),
+        Color.parseColor("#7B74FF"),
+        Color.parseColor("#6C63FF"),
+        Color.parseColor("#5A54D4")
+    )
 
-    private fun init() {
-        paint.strokeWidth = 10f // Set the width of the bars
-        paint.strokeCap = Paint.Cap.ROUND // Make the ends of the bars round
-    }
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     fun releaseVisualizer() {
         visualizer?.release()
@@ -36,83 +41,63 @@ class CustomVisualizerView : View {
     fun setPlayer(audioSessionId: Int) {
         visualizer?.release()
         visualizer = null
-        visualizer = Visualizer(audioSessionId)
-        visualizer?.apply {
-            captureSize = Visualizer.getCaptureSizeRange()[1]
-            setDataCaptureListener(
-                object : Visualizer.OnDataCaptureListener {
+        try {
+            visualizer = Visualizer(audioSessionId).apply {
+                captureSize = Visualizer.getCaptureSizeRange()[1]
+                setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
                     override fun onWaveFormDataCapture(
-                        visualizer: Visualizer,
-                        waveform: ByteArray,
-                        samplingRate: Int
+                        v: Visualizer, waveform: ByteArray, samplingRate: Int
                     ) {
                         bytes = waveform
                         postInvalidate()
                     }
-
                     override fun onFftDataCapture(
-                        visualizer: Visualizer,
-                        fft: ByteArray,
-                        samplingRate: Int
-                    ) {
-                        // Not needed for waveform visualizer
-                    }
-                },
-                Visualizer.getMaxCaptureRate() / 2,
-                true,
-                false
-            )
-            enabled = true
+                        v: Visualizer, fft: ByteArray, samplingRate: Int
+                    ) {}
+                }, Visualizer.getMaxCaptureRate() / 2, true, false)
+                enabled = true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (bytes != null) {
-            val width = width
-            val height = height
-            val scale = 111f
-            val barWidth = width / (bytes!!.size.toFloat() * 0.06) // Increase the gap between bars
-            val thicknessScale = 10 // Adjust the scaling factor to increase thickness
+        val data = bytes ?: return
+        if (data.isEmpty()) return
 
-            // Define an array of colors
-            val colors = arrayOf(
-                Color.RED, Color.GREEN, Color.BLUE,
-                Color.YELLOW, Color.CYAN, Color.MAGENTA
-            )
-            for (i in bytes!!.indices) {
-                val barX = i * barWidth * 1.5 // Adjust the position with increased gap
-                val amplitude = (bytes!![i] + 128).toFloat() / scale // Normalize the amplitude
-                val barHeight = amplitude * height / 2 * thicknessScale // Increase thickness
+        val viewWidth = width.toFloat()
+        val viewHeight = height.toFloat()
 
-                // Draw only bars with significant amplitude (adjust threshold as needed)
-                if (barHeight < height * 0.9) { // Example threshold: 90% of the view height
-                    // Assign color based on the colorIndex
-                    paint.color = colors[colorIndex]
+        val numBars = 48
+        val step = maxOf(1, data.size / numBars)
+        val slotWidth = viewWidth / numBars
+        val barWidth = slotWidth * 0.6f
+        val barOffset = (slotWidth - barWidth) / 2f
+        val cornerRadius = barWidth / 2f
+        val minBarHeight = viewHeight * 0.06f
 
-                    // Draw the bar
-                    canvas.drawRect(
-                        barX.toFloat(), (height - barHeight).toFloat(),
-                        (barX + barWidth).toFloat(), height.toFloat(), paint
-                    )
-                }
-            }
+        for (i in 0 until numBars) {
+            val sampleIdx = (i * step).coerceAtMost(data.size - 1)
+            val amplitude = (data[sampleIdx] + 128).toFloat() / 256f
+            val barHeight = (amplitude * viewHeight * 0.92f).coerceAtLeast(minBarHeight)
 
-            // Decrease amplitude of all bars slowly
-            for (i in bytes!!.indices) {
-                if (bytes!![i] < 128) {
-                    bytes!![i] = (bytes!![i] + 1).toByte()
-                }
-            }
-            postInvalidateDelayed(0) // Redraw after a short delay
+            val left = i * slotWidth + barOffset
+            val top = viewHeight - barHeight
+            val right = left + barWidth
 
-            // Update the color index for the next draw
-            colorIndex = (colorIndex + 1) % colors.size
+            paint.color = barColors[i % barColors.size]
+            rect.set(left, top, right, viewHeight)
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
         }
+
+        postInvalidateDelayed(33L) // ~30 fps
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         visualizer?.release()
+        visualizer = null
     }
 }
