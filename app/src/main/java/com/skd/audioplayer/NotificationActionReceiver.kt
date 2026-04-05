@@ -4,35 +4,25 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
+/**
+ * Receives PendingIntent broadcasts fired by the media notification buttons
+ * (previous, play/pause, next) and delegates to the live MainActivity instance.
+ *
+ * Works on all Android versions (API 24+):
+ *   - The PendingIntents are created with FLAG_IMMUTABLE (required on API 31+).
+ *   - The receiver is declared in the manifest so it is invoked even when the
+ *     app is in the background.
+ *   - If MainActivity has been destroyed (app killed), the WeakReference is null
+ *     and the action is silently ignored.
+ */
 class NotificationActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        // Handle the playback control actions here
+        val activity = MainActivity.instance?.get() ?: return
         when (intent?.action) {
-            MusicService.ACTION_PLAY_PREVIOUS -> {
-                // Handle previous action
-                val previousIntent = Intent(context, MusicService::class.java).apply {
-                    action = MusicService.ACTION_PLAY_PREVIOUS
-                }
-                context?.startService(previousIntent)
-            }
-            MusicService.ACTION_TOGGLE_PLAYBACK -> {
-                // Handle play/pause action
-                val toggleIntent = Intent(context, MusicService::class.java).apply {
-                    action = MusicService.ACTION_TOGGLE_PLAYBACK
-                }
-                context?.startService(toggleIntent)
-            }
-            MusicService.ACTION_PLAY_NEXT -> {
-                // Handle next action
-                val nextIntent = Intent(context, MusicService::class.java).apply {
-                    action = MusicService.ACTION_PLAY_NEXT
-                }
-                context?.startService(nextIntent)
-            }
-            else -> {
-                // Do nothing
-            }
+            MainActivity.ACTION_PREVIOUS -> activity.playPreviousSong()
+            MainActivity.ACTION_TOGGLE   -> activity.togglePlayback()
+            MainActivity.ACTION_NEXT     -> activity.playNextSong()
         }
     }
 }

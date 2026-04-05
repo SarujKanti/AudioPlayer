@@ -3,8 +3,10 @@ package com.skd.audioplayer
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
@@ -20,7 +22,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RemoteViews
 import android.widget.SearchView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -36,6 +37,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -47,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     private var currentSongIndex = -1
     private lateinit var visualizerView: CustomVisualizerView
 
-    private val NOTIFICATION_ID = 1
     private lateinit var notificationManager: NotificationManagerCompat
     private lateinit var wakeLock: PowerManager.WakeLock
 
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         setContentView(R.layout.activity_main)
+        instance = WeakReference(this)
 
         // fitsSystemWindows="true" on rootLayout handles all inset padding
         // automatically — no manual listener needed.
@@ -297,7 +299,7 @@ class MainActivity : AppCompatActivity() {
         if (isRepeatAllOn) isShuffleOn = false
     }
 
-    private fun playNextSong() {
+    internal fun playNextSong() {
         if (songsAdapter.itemCount == 0) return
         when {
             isShuffleOn -> {
@@ -320,7 +322,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun playPreviousSong() {
+    internal fun playPreviousSong() {
         if (songsAdapter.itemCount == 0) return
         if (currentSongIndex - 1 >= 0) {
             playSong(songsAdapter.getSongs()[--currentSongIndex])
@@ -374,7 +376,7 @@ class MainActivity : AppCompatActivity() {
 
             mediaPlayer.setOnCompletionListener { playNextSong() }
 
-            showNotification(song)
+            showNotification(song, true)
             if (index != -1) recyclerView.smoothScrollToPosition(index)
             visualizerView.visibility = View.VISIBLE
             cardView.visibility = View.VISIBLE
@@ -395,19 +397,21 @@ class MainActivity : AppCompatActivity() {
         return String.format("%02d:%02d", s / 60, s % 60)
     }
 
-    private fun togglePlayback() {
+    internal fun togglePlayback() {
         val pauseBtn = findViewById<Button>(R.id.pauseResumeButton)
         if (mediaPlayer.isPlaying) {
             mediaPlayer.pause()
             pauseBtn.setBackgroundResource(R.drawable.play)
-            notificationManager.cancel(NOTIFICATION_ID)
             visualizerView.visibility = View.GONE
         } else {
             mediaPlayer.start()
             pauseBtn.setBackgroundResource(R.drawable.pause)
-            if (currentSongIndex != -1) showNotification(songsAdapter.getSongs()[currentSongIndex])
             visualizerView.visibility = View.VISIBLE
             updateSeekBar()
+        }
+        // Update notification to reflect new play/pause state
+        if (currentSongIndex != -1) {
+            showNotification(songsAdapter.getSongs()[currentSongIndex], mediaPlayer.isPlaying)
         }
     }
 
@@ -435,45 +439,75 @@ class MainActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "Music Player", NotificationManager.IMPORTANCE_DEFAULT
+                CHANNEL_ID, "Music Player", NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
-    private fun showNotification(song: Song) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
+    private fun showNotification(song: Song, isPlaying: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
         ) return
-        val layout = RemoteViews(packageName, R.layout.custom_notification_layout).apply {
-            setTextViewText(R.id.notification_title, song.title)
-            setTextViewText(R.id.notification_artist, song.artist)
-            try {
-                val input = contentResolver.openInputStream(Uri.parse(song.albumArtUri))
-                if (input != null) {
-                    setImageViewBitmap(R.id.notification_album_art, BitmapFactory.decodeStream(input))
-                    input.close()
-                } else {
-                    setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
-                }
-            } catch (e: FileNotFoundException) {
-                setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
-            } catch (e: IOException) {
-                setImageViewResource(R.id.notification_album_art, R.drawable.audioicon)
+
+        // Load album art bitmap (null → system uses small icon only)
+        val albumBitmap = try {
+            contentResolver.openInputStream(Uri.parse(song.albumArtUri))?.use {
+                BitmapFactory.decodeStream(it)
             }
-        }
+        } catch (e: Exception) { null }
+
+        // Tap notification → bring app to foreground
+        val openApp = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        // Helper for broadcast PendingIntents to NotificationActionReceiver
+        fun actionIntent(action: String, reqCode: Int): PendingIntent =
+            PendingIntent.getBroadcast(
+                this, reqCode,
+                Intent(action, null, this, NotificationActionReceiver::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.audioicon)
-            .setCustomContentView(layout)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setSound(null)
+            .setContentTitle(song.title)
+            .setContentText(song.artist)
+            .setLargeIcon(albumBitmap)
+            .setContentIntent(openApp)
+            .setOngoing(isPlaying)           // non-dismissible while playing
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // show on lock screen
             .setOnlyAlertOnce(true)
+            .setSound(null)
+            // Three action buttons: previous | play/pause | next
+            .addAction(R.drawable.previous, "Previous",
+                actionIntent(ACTION_PREVIOUS, 101))
+            .addAction(
+                if (isPlaying) R.drawable.pause else R.drawable.play,
+                if (isPlaying) "Pause" else "Play",
+                actionIntent(ACTION_TOGGLE, 102)
+            )
+            .addAction(R.drawable.next, "Next",
+                actionIntent(ACTION_NEXT, 103))
+            // MediaStyle shows actions in the collapsed notification row
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(0, 1, 2)
+            )
             .build()
+
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        instance = null
         mediaPlayer.release()
         notificationManager.cancel(NOTIFICATION_ID)
         visualizerView.releaseVisualizer()
@@ -501,6 +535,11 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 123
-        private const val CHANNEL_ID = "MusicPlayerChannel"
+        const val CHANNEL_ID     = "MusicPlayerChannel"
+        const val ACTION_TOGGLE  = "com.skd.audioplayer.ACTION_TOGGLE_PLAYBACK"
+        const val ACTION_PREVIOUS = "com.skd.audioplayer.ACTION_PLAY_PREVIOUS"
+        const val ACTION_NEXT    = "com.skd.audioplayer.ACTION_PLAY_NEXT"
+        const val NOTIFICATION_ID = 1
+        var instance: WeakReference<MainActivity>? = null
     }
 }
