@@ -65,17 +65,20 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        // Apply WindowInsets so content doesn't hide behind status / nav bars
+        // Apply WindowInsets so content doesn't hide behind status / nav bars.
+        // Listener is placed on window.decorView — the only view guaranteed to
+        // receive insets on every Android version including 15+.
         val topBarView = findViewById<View>(R.id.topBar)
         val controlPanelView = findViewById<LinearLayout>(R.id.controlPanel)
-        val topBarOriginalPaddingTop = topBarView.paddingTop
-        val controlPanelOriginalPaddingBottom = controlPanelView.paddingBottom
+        // Capture the XML-defined base paddings once, before insets modify them.
+        val topBarBasePaddingTop = topBarView.paddingTop
+        val controlPanelBasePaddingBottom = controlPanelView.paddingBottom
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootLayout)) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             topBarView.setPadding(
                 topBarView.paddingLeft,
-                topBarOriginalPaddingTop + bars.top,
+                topBarBasePaddingTop + bars.top,      // 12 dp XML + status-bar height
                 topBarView.paddingRight,
                 topBarView.paddingBottom
             )
@@ -83,9 +86,9 @@ class MainActivity : AppCompatActivity() {
                 controlPanelView.paddingLeft,
                 controlPanelView.paddingTop,
                 controlPanelView.paddingRight,
-                controlPanelOriginalPaddingBottom + bars.bottom
+                controlPanelBasePaddingBottom + bars.bottom  // 20 dp XML + nav-bar height
             )
-            WindowInsetsCompat.CONSUMED
+            insets   // do NOT consume – let children handle their own insets if needed
         }
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
