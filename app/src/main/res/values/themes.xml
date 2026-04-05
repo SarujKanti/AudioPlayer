@@ -8,4 +8,9 @@
     </style>
 
     <style name="Theme.AudioPlayer" parent="Base.Theme.AudioPlayer" />
+
+    <!-- Splash screen: forces dark window background before layout inflates -->
+    <style name="Theme.AudioPlayer.Splash" parent="Theme.AudioPlayer">
+        <item name="android:windowBackground">@drawable/splash_bg</item>
+    </style>
 </resources>
