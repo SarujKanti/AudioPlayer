@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private var isRepeatAllOn = false
     // true = "All Songs" (recyclerView) is visible; false = "Now Playing" is visible
     private var isPlaylistVisible = true
+    private var isInForeground = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -457,6 +458,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showNotification(song: Song, isPlaying: Boolean) {
+        if (isInForeground) return   // never show notification while app is visible
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
@@ -514,6 +516,22 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isInForeground = true
+        notificationManager.cancel(NOTIFICATION_ID)  // hide notification while app is open
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isInForeground = false
+        // Show notification only when going to background (isFinishing = true means
+        // the activity is being destroyed, e.g. cleared from recents — skip in that case)
+        if (!isFinishing && currentSongIndex != -1) {
+            showNotification(songsAdapter.getSongs()[currentSongIndex], mediaPlayer.isPlaying)
+        }
     }
 
     override fun onDestroy() {
