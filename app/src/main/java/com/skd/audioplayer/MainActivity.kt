@@ -137,7 +137,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.shuffleButton).setOnClickListener { toggleShuffle() }
         findViewById<Button>(R.id.reapet_button).setOnClickListener { toggleRepeat() }
 
-        val controlPanel = controlPanelView
         val playlistButton = findViewById<Button>(R.id.playlist_button)
         val playingCardView = findViewById<CardView>(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
