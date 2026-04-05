@@ -126,14 +126,14 @@ class MainActivity : AppCompatActivity() {
                 playlistButton.setBackgroundResource(R.drawable.playlist)
                 heading.text = "Now Playing"
                 visualizerView.visibility = View.VISIBLE
-                controlPanel.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
             } else {
                 playingCardView.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
                 playlistButton.setBackgroundResource(R.drawable.playing_button)
                 heading.text = "All Songs"
                 visualizerView.visibility = View.GONE
-                controlPanel.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
             }
             isPlaylistVisible = !isPlaylistVisible
         }
@@ -145,14 +145,14 @@ class MainActivity : AppCompatActivity() {
         searchButton.setOnClickListener {
             if (searchView.visibility == View.VISIBLE) {
                 searchView.visibility = View.GONE
-                controlPanel.visibility = View.VISIBLE
+//                controlPanel.visibility = View.VISIBLE
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
             } else {
                 searchView.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
                 playingCardView.visibility = View.GONE
-                controlPanel.visibility = View.GONE
+//                controlPanel.visibility = View.GONE
                 searchView.requestFocus()
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
