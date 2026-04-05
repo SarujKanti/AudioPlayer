@@ -32,8 +32,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.activity.enableEdgeToEdge
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.FileNotFoundException
@@ -67,29 +65,8 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        // Capture XML-defined base paddings ONCE (before any inset modifies them).
-        val topBarView    = findViewById<View>(R.id.topBar)
-        val controlPanel  = findViewById<LinearLayout>(R.id.controlPanel)
-        val topBarBasePT  = topBarView.paddingTop          // 12 dp from XML
-        val cpBasePB      = controlPanel.paddingBottom     // 20 dp from XML
-
-        // topBar: add status-bar height to its top padding so heading is never
-        // hidden behind the status bar (works on all Android versions).
-        ViewCompat.setOnApplyWindowInsetsListener(topBarView) { v, insets ->
-            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.setPadding(v.paddingLeft, topBarBasePT + statusBar.top,
-                         v.paddingRight, v.paddingBottom)
-            insets   // pass through so siblings still receive their insets
-        }
-
-        // controlPanel: add nav-bar height to its bottom padding so buttons
-        // are never hidden behind the navigation bar.
-        ViewCompat.setOnApplyWindowInsetsListener(controlPanel) { v, insets ->
-            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            v.setPadding(v.paddingLeft, v.paddingTop,
-                         v.paddingRight, cpBasePB + navBar.bottom)
-            insets
-        }
+        // fitsSystemWindows="true" on rootLayout handles all inset padding
+        // automatically — no manual listener needed.
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
