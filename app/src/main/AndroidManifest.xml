@@ -40,6 +40,13 @@
             android:foregroundServiceType="mediaPlayback"
             tools:ignore="ForegroundServicePermission" />
 
+        <!-- stopWithTask="false" keeps this service alive after the task is removed
+             so onTaskRemoved() fires and the notification is cancelled immediately -->
+        <service
+            android:name=".AppLifecycleService"
+            android:exported="false"
+            android:stopWithTask="false" />
+
         <receiver
             android:name=".NotificationActionReceiver"
             android:enabled="true"
