@@ -31,8 +31,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -60,35 +60,35 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Enable edge-to-edge for Android 15+ (targetSdk 35+)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // enableEdgeToEdge() is the official AndroidX helper (activity 1.8+).
+        // It calls setDecorFitsSystemWindows(false) AND sets up correct status-bar
+        // / nav-bar colors for all Android versions including 15+.
+        enableEdgeToEdge()
 
         setContentView(R.layout.activity_main)
 
-        // Apply WindowInsets so content doesn't hide behind status / nav bars.
-        // Listener is placed on window.decorView — the only view guaranteed to
-        // receive insets on every Android version including 15+.
-        val topBarView = findViewById<View>(R.id.topBar)
-        val controlPanelView = findViewById<LinearLayout>(R.id.controlPanel)
-        // Capture the XML-defined base paddings once, before insets modify them.
-        val topBarBasePaddingTop = topBarView.paddingTop
-        val controlPanelBasePaddingBottom = controlPanelView.paddingBottom
+        // Capture XML-defined base paddings ONCE (before any inset modifies them).
+        val topBarView    = findViewById<View>(R.id.topBar)
+        val controlPanel  = findViewById<LinearLayout>(R.id.controlPanel)
+        val topBarBasePT  = topBarView.paddingTop          // 12 dp from XML
+        val cpBasePB      = controlPanel.paddingBottom     // 20 dp from XML
 
-        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            topBarView.setPadding(
-                topBarView.paddingLeft,
-                topBarBasePaddingTop + bars.top,      // 12 dp XML + status-bar height
-                topBarView.paddingRight,
-                topBarView.paddingBottom
-            )
-            controlPanelView.setPadding(
-                controlPanelView.paddingLeft,
-                controlPanelView.paddingTop,
-                controlPanelView.paddingRight,
-                controlPanelBasePaddingBottom + bars.bottom  // 20 dp XML + nav-bar height
-            )
-            insets   // do NOT consume – let children handle their own insets if needed
+        // topBar: add status-bar height to its top padding so heading is never
+        // hidden behind the status bar (works on all Android versions).
+        ViewCompat.setOnApplyWindowInsetsListener(topBarView) { v, insets ->
+            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            v.setPadding(v.paddingLeft, topBarBasePT + statusBar.top,
+                         v.paddingRight, v.paddingBottom)
+            insets   // pass through so siblings still receive their insets
+        }
+
+        // controlPanel: add nav-bar height to its bottom padding so buttons
+        // are never hidden behind the navigation bar.
+        ViewCompat.setOnApplyWindowInsetsListener(controlPanel) { v, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(v.paddingLeft, v.paddingTop,
+                         v.paddingRight, cpBasePB + navBar.bottom)
+            insets
         }
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
