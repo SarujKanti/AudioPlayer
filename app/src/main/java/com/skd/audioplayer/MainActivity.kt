@@ -49,6 +49,8 @@ class MainActivity : AppCompatActivity() {
     private var isUserSeeking = false
     private var currentSongIndex = -1
     private lateinit var visualizerView: CustomVisualizerView
+    private lateinit var playingCardView: CardView
+    private lateinit var controlPanel: LinearLayout
 
     private lateinit var notificationManager: NotificationManagerCompat
     private lateinit var wakeLock: PowerManager.WakeLock
@@ -69,6 +71,8 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
         instance = WeakReference(this)
+        playingCardView = findViewById(R.id.Playing_Song_Cardview)
+        controlPanel    = findViewById(R.id.controlPanel)
         // Start the lifecycle service so onTaskRemoved() fires when user clears the app
         startService(Intent(this, AppLifecycleService::class.java))
 
@@ -121,9 +125,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.shuffleButton).setOnClickListener { toggleShuffle() }
         findViewById<Button>(R.id.reapet_button).setOnClickListener { toggleRepeat() }
 
-        val controlPanel = findViewById<LinearLayout>(R.id.controlPanel)
         val playlistButton = findViewById<Button>(R.id.playlist_button)
-        val playingCardView = findViewById<CardView>(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
 
         playlistButton.setOnClickListener {
@@ -134,8 +136,6 @@ class MainActivity : AppCompatActivity() {
                 heading.text = "Now Playing"
                 visualizerView.visibility = if (currentSongIndex != -1) View.VISIBLE else View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
-                visualizerView.visibility = View.VISIBLE
-//                controlPanel.visibility = View.VISIBLE
             } else {
                 playingCardView.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
@@ -143,7 +143,6 @@ class MainActivity : AppCompatActivity() {
                 heading.text = "All Songs"
                 visualizerView.visibility = View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
-//                controlPanel.visibility = View.VISIBLE
             }
             isPlaylistVisible = !isPlaylistVisible
         }
@@ -348,7 +347,6 @@ class MainActivity : AppCompatActivity() {
         val pauseBtn = findViewById<Button>(R.id.pauseResumeButton)
         val albumImageView = findViewById<ImageView>(R.id.Playing_Song_Imageview)
         val artistView = findViewById<TextView>(R.id.song_artist)
-        val cardView = findViewById<CardView>(R.id.Playing_Song_Cardview)
         val heading = findViewById<TextView>(R.id.heading)
         val playlistBtn = findViewById<Button>(R.id.playlist_button)
 
@@ -391,13 +389,13 @@ class MainActivity : AppCompatActivity() {
             showNotification(song, true)
             if (index != -1) recyclerView.smoothScrollToPosition(index)
             visualizerView.visibility = View.VISIBLE
-            cardView.visibility = View.VISIBLE
+            playingCardView.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
             heading.text = "Now Playing"
             playlistBtn.setBackgroundResource(R.drawable.playlist)
             isPlaylistVisible = false   // keep flag in sync with actual UI state
             findViewById<CardView>(R.id.searchCard).visibility = View.GONE
-            findViewById<LinearLayout>(R.id.controlPanel).visibility = View.VISIBLE
+            controlPanel.visibility = View.VISIBLE
 
         } catch (e: Exception) {
             e.printStackTrace()
