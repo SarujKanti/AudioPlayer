@@ -162,6 +162,7 @@ class MainActivity : AppCompatActivity() {
                 searchCard.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
                 playingCardView.visibility = View.GONE
+                visualizerView.visibility = View.GONE
                 controlPanel.visibility = View.GONE
                 searchView.requestFocus()
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
