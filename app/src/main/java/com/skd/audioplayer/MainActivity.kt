@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var visualizerView: CustomVisualizerView
     private lateinit var playingCardView: CardView
     private lateinit var controlPanel: LinearLayout
+    private lateinit var searchCard: CardView
+    private lateinit var searchView: SearchView
 
     private lateinit var notificationManager: NotificationManagerCompat
     private lateinit var wakeLock: PowerManager.WakeLock
@@ -73,6 +75,8 @@ class MainActivity : AppCompatActivity() {
         instance = WeakReference(this)
         playingCardView = findViewById(R.id.Playing_Song_Cardview)
         controlPanel    = findViewById(R.id.controlPanel)
+        searchCard      = findViewById(R.id.searchCard)
+        searchView      = findViewById(R.id.searchView)
         // Start the lifecycle service so onTaskRemoved() fires when user clears the app
         startService(Intent(this, AppLifecycleService::class.java))
 
@@ -129,6 +133,13 @@ class MainActivity : AppCompatActivity() {
         val heading = findViewById<TextView>(R.id.heading)
 
         playlistButton.setOnClickListener {
+            // Always close search bar and keyboard before switching view
+            if (searchCard.visibility == View.VISIBLE) {
+                searchCard.visibility = View.GONE
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(searchView.windowToken, 0)
+            }
+
             if (isPlaylistVisible) {
                 playingCardView.visibility = View.VISIBLE
                 recyclerView.visibility = View.GONE
@@ -148,8 +159,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         val searchButton = findViewById<Button>(R.id.search_button)
-        val searchCard = findViewById<CardView>(R.id.searchCard)
-        val searchView = findViewById<SearchView>(R.id.searchView)
 
         searchButton.setOnClickListener {
             if (searchCard.visibility == View.VISIBLE) {
