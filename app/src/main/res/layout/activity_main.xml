@@ -61,20 +61,31 @@
         android:background="@color/divider" />
 
     <!-- ══════════════════════════════════════
-         SEARCH VIEW
+         SEARCH BAR  (card + inner SearchView)
          ══════════════════════════════════════ -->
-    <SearchView
-        android:id="@+id/searchView"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/searchCard"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="56dp"
         android:layout_below="@id/topDivider"
         android:layout_marginLeft="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:layout_marginRight="16dp"
-        android:background="@color/bg_card"
-        android:iconifiedByDefault="true"
-        android:queryHint="Search songs…"
-        android:visibility="gone" />
+        android:layout_marginBottom="4dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="4dp">
+
+        <SearchView
+            android:id="@+id/searchView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:iconifiedByDefault="false"
+            android:queryHint="Search audio file" />
+
+    </androidx.cardview.widget.CardView>
 
     <!-- ══════════════════════════════════════
          SONG LIST  (playlist mode)
@@ -84,7 +95,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/controlPanel"
-        android:layout_below="@id/searchView"
+        android:layout_below="@id/searchCard"
         android:clipToPadding="false"
         android:paddingTop="4dp"
         android:paddingBottom="8dp"
