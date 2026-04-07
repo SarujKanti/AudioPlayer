@@ -149,21 +149,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         val searchButton = findViewById<Button>(R.id.search_button)
+        val searchCard = findViewById<CardView>(R.id.searchCard)
         val searchView = findViewById<SearchView>(R.id.searchView)
-        searchView.visibility = View.GONE
 
         searchButton.setOnClickListener {
-            if (searchView.visibility == View.VISIBLE) {
-                searchView.visibility = View.GONE
+            if (searchCard.visibility == View.VISIBLE) {
+                searchCard.visibility = View.GONE
                 if (currentSongIndex != -1) controlPanel.visibility = View.VISIBLE
-//                controlPanel.visibility = View.VISIBLE
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(searchView.windowToken, 0)
             } else {
-                searchView.visibility = View.VISIBLE
+                searchCard.visibility = View.VISIBLE
                 recyclerView.visibility = View.VISIBLE
                 playingCardView.visibility = View.GONE
-//                controlPanel.visibility = View.GONE
+                controlPanel.visibility = View.GONE
                 searchView.requestFocus()
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(searchView, InputMethodManager.SHOW_IMPLICIT)
@@ -396,7 +395,7 @@ class MainActivity : AppCompatActivity() {
             heading.text = "Now Playing"
             playlistBtn.setBackgroundResource(R.drawable.playlist)
             isPlaylistVisible = false   // keep flag in sync with actual UI state
-            findViewById<SearchView>(R.id.searchView).visibility = View.GONE
+            findViewById<CardView>(R.id.searchCard).visibility = View.GONE
             findViewById<LinearLayout>(R.id.controlPanel).visibility = View.VISIBLE
 
         } catch (e: Exception) {
