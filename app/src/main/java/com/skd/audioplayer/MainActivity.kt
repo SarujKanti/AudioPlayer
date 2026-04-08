@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ContentUris
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -119,7 +120,7 @@ class MainActivity : AppCompatActivity() {
             loadSongs()
             setupVisualizer()
         } else {
-            requestRequiredPermissions()
+            showPermissionRationaleAndRequest()
         }
 
         // Playback controls
@@ -212,6 +213,27 @@ class MainActivity : AppCompatActivity() {
         else
             Manifest.permission.READ_EXTERNAL_STORAGE
         return ContextCompat.checkSelfPermission(this, storagePermission) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun showPermissionRationaleAndRequest() {
+        // On Android 12 and below the system describes READ_EXTERNAL_STORAGE as
+        // "access photos and media" — show a friendly explanation first so users
+        // understand it is only used to find audio files on their device.
+        val message = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            "Pocket Waves needs permission to access audio files on your device to show your music library."
+        else
+            "Pocket Waves needs storage permission to find and play audio files saved on your device.\n\n" +
+            "Android describes this as \"access photos and media\" but the app only reads audio files."
+
+        AlertDialog.Builder(this)
+            .setTitle("Audio File Access")
+            .setMessage(message)
+            .setPositiveButton("Continue") { _, _ -> requestRequiredPermissions() }
+            .setNegativeButton("Cancel") { _, _ ->
+                Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun requestRequiredPermissions() {
