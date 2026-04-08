@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             "Pocket Waves needs permission to access audio files on your device to show your music library."
         else
             "Pocket Waves needs storage permission to find and play audio files saved on your device.\n\n" +
-            "Android describes this as \"access photos and media\" but the app only reads audio files."
+                    "Android describes this as \"access photos and media\" but the app only reads audio files."
 
         AlertDialog.Builder(this)
             .setTitle("Audio File Access")
@@ -497,7 +497,7 @@ class MainActivity : AppCompatActivity() {
     private fun showNotification(song: Song, isPlaying: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
+            != PackageManager.PERMISSION_GRANTED
         ) return
 
         // Load album art bitmap (null → system uses small icon only)
