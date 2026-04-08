@@ -1,4 +1,4 @@
-package com.skd.audioplayer
+package com.skd.pocketWaves
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -596,9 +596,9 @@ class MainActivity : AppCompatActivity() {
         private const val PERMISSION_REQUEST_CODE = 123
         private const val RECORD_AUDIO_REQUEST_CODE = 456
         const val CHANNEL_ID     = "MusicPlayerChannel"
-        const val ACTION_TOGGLE  = "com.skd.audioplayer.ACTION_TOGGLE_PLAYBACK"
-        const val ACTION_PREVIOUS = "com.skd.audioplayer.ACTION_PLAY_PREVIOUS"
-        const val ACTION_NEXT    = "com.skd.audioplayer.ACTION_PLAY_NEXT"
+        const val ACTION_TOGGLE  = "com.skd.pocketWaves.ACTION_TOGGLE_PLAYBACK"
+        const val ACTION_PREVIOUS = "com.skd.pocketWaves.ACTION_PLAY_PREVIOUS"
+        const val ACTION_NEXT    = "com.skd.pocketWaves.ACTION_PLAY_NEXT"
         const val NOTIFICATION_ID = 1
         var instance: WeakReference<MainActivity>? = null
     }

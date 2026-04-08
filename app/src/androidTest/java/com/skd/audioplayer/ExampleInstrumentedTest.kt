@@ -1,4 +1,4 @@
-package com.skd.audioplayer
+package com.skd.pocketWaves
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

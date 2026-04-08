@@ -1,4 +1,4 @@
-package com.skd.audioplayer
+package com.skd.pocketWaves
 
 import android.content.BroadcastReceiver
 import android.content.Context

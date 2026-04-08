@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.skd.audioplayer"
+    namespace = "com.skd.pocketWaves"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.skd.audioplayer"
+        applicationId = "com.skd.pocketWaves"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

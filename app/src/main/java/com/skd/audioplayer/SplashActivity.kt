@@ -1,4 +1,4 @@
-package com.skd.audioplayer
+package com.skd.pocketWaves
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator

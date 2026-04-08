@@ -52,9 +52,9 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.skd.audioplayer.ACTION_PLAY_PREVIOUS" />
-                <action android:name="com.skd.audioplayer.ACTION_TOGGLE_PLAYBACK" />
-                <action android:name="com.skd.audioplayer.ACTION_PLAY_NEXT" />
+                <action android:name="com.skd.pocketWaves.ACTION_PLAY_PREVIOUS" />
+                <action android:name="com.skd.pocketWaves.ACTION_TOGGLE_PLAYBACK" />
+                <action android:name="com.skd.pocketWaves.ACTION_PLAY_NEXT" />
             </intent-filter>
         </receiver>
     </application>
