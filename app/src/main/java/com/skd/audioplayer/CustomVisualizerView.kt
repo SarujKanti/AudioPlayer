@@ -1,4 +1,4 @@
-package com.skd.pocketWaves
+package com.skd.audioplayer
 
 import android.content.Context
 import android.graphics.Canvas

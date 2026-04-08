@@ -1,4 +1,4 @@
-package com.skd.pocketWaves
+package com.skd.audioplayer
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

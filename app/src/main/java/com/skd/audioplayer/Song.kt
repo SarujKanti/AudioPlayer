@@ -1,4 +1,4 @@
-package com.skd.pocketWaves
+package com.skd.audioplayer
 
 data class Song(
     val id: Long,

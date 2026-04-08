@@ -1,4 +1,4 @@
-package com.skd.pocketWaves
+package com.skd.audioplayer
 
 import android.graphics.Color
 import android.view.LayoutInflater
