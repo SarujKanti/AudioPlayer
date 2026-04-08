@@ -1,5 +1,4 @@
-package com.skd.pocketWaves
-
+package com.skd.audioplayer
 import org.junit.Test
 
 import org.junit.Assert.*
