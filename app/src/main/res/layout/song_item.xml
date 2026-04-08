@@ -48,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_500"
                 android:singleLine="true"
                 android:text="Song Title"
                 android:textColor="@color/text_primary"
@@ -61,6 +61,7 @@
                 android:layout_marginTop="3dp"
                 android:ellipsize="end"
                 android:singleLine="true"
+                android:fontFamily="@font/inter_500"
                 android:text="Artist Name"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
