@@ -211,8 +211,7 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.READ_MEDIA_AUDIO
         else
             Manifest.permission.READ_EXTERNAL_STORAGE
-        return ContextCompat.checkSelfPermission(this, storagePermission) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, storagePermission) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestRequiredPermissions() {
@@ -220,8 +219,7 @@ class MainActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 Manifest.permission.READ_MEDIA_AUDIO
             else
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+                Manifest.permission.READ_EXTERNAL_STORAGE
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -243,10 +241,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupVisualizer() {
-        if (::visualizerView.isInitialized &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        ) {
-            visualizerView.setPlayer(mediaPlayer.audioSessionId)
+        if (!::visualizerView.isInitialized) return
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED -> {
+                visualizerView.setPlayer(mediaPlayer.audioSessionId)
+            }
+            else -> {
+                // Request RECORD_AUDIO separately — kept out of first-launch request
+                // so the initial dialog only asks to access audio files.
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.RECORD_AUDIO),
+                    RECORD_AUDIO_REQUEST_CODE
+                )
+            }
         }
     }
 
@@ -538,23 +547,32 @@ class MainActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                Manifest.permission.READ_MEDIA_AUDIO
-            else
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            val idx = permissions.indexOf(storagePermission)
-            if (idx != -1 && grantResults[idx] == PackageManager.PERMISSION_GRANTED) {
-                loadSongs()
-                setupVisualizer()
-            } else {
-                Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
+        when (requestCode) {
+            PERMISSION_REQUEST_CODE -> {
+                val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    Manifest.permission.READ_MEDIA_AUDIO
+                else
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                val idx = permissions.indexOf(storagePermission)
+                if (idx != -1 && grantResults[idx] == PackageManager.PERMISSION_GRANTED) {
+                    loadSongs()
+                    setupVisualizer()
+                } else {
+                    Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
+                }
+            }
+            RECORD_AUDIO_REQUEST_CODE -> {
+                val idx = permissions.indexOf(Manifest.permission.RECORD_AUDIO)
+                if (idx != -1 && grantResults[idx] == PackageManager.PERMISSION_GRANTED) {
+                    setupVisualizer()
+                }
             }
         }
     }
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 123
+        private const val RECORD_AUDIO_REQUEST_CODE = 456
         const val CHANNEL_ID     = "MusicPlayerChannel"
         const val ACTION_TOGGLE  = "com.skd.audioplayer.ACTION_TOGGLE_PLAYBACK"
         const val ACTION_PREVIOUS = "com.skd.audioplayer.ACTION_PLAY_PREVIOUS"
