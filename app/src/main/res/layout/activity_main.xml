@@ -127,7 +127,7 @@
     <!-- ══════════════════════════════════════
          NOW PLAYING – visualizer
          ══════════════════════════════════════ -->
-    <com.skd.audioplayer.CustomVisualizerView
+    <com.skd.pocketWaves.CustomVisualizerView
         android:id="@+id/visualizerView"
         android:layout_width="match_parent"
         android:layout_height="80dp"

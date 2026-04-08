@@ -1,4 +1,4 @@
-package com.skd.audioplayer
+package com.skd.pocketWaves
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -37,8 +37,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import java.io.FileNotFoundException
-import java.io.IOException
+import com.skd.audioplayer.R
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity() {
