@@ -37,7 +37,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.skd.pocketWaves.NotificationActionReceiver
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity() {
